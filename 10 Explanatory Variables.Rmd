@@ -1,6 +1,6 @@
 ---
 title: "Explanatory Variables"
-subtitle: "MKTG 411 Marketing Analytics"
+subtitle: "MCB Consulting Group (MKTG 411)"
 output: 
   ioslides_presentation:
     widescreen: true
@@ -31,34 +31,40 @@ output:
 
 ## Statistical and Causal Inference
 
-Regression and how we interpret the parameter estimates *sounds* like causality, but regression doesn't *necessarily* describe causal relationships. There are two types of inference that are interconnected.
-
-- **Statistical inference** is inferring associations (e.g., correlations) between variables.
-- **Causal inference** is inferring *causal* associations between variables.
-
-Discovering associations between variables is *common*. Uncovering causality is *uncommon*. We don't get causality by fitting and evaluating a statistical model. Causality comes from carefully considering the data generating process.
-
-## Statistical and Causal Inference
-
 <center>
 
 ![](Figures/ice-cream-shark-attacks.png){width=700px}
 
 <center>
 
-## DAG Redux
+## Motivating Example
 
-DAGs are used to detail the possible data generating process. The *paths* describe statistical associations. The *arrows* indicate causal associations.
+Kroger decided to run a promotional campaign offering targeted %-discount coupons to customers who shop at their stores nationwide. The coupons were delivered via retailer-specific apps and were valid only for the November 21st weekend. The marketing team has shared the results with us: they observed, on average, 23% higher soup category sales when the campaign was running compared to the previous weekend. The marketing team was quick to label the campaign as a success, but upper-level management is skeptical and has asked us to review and confirm the results.
 
-<center>
+## Motivating Example
 
-![](Figures/dag-ice-cream-shark-attacks.png){width=600px}
+Kroger decided to run a promotional campaign offering targeted %-discount coupons to customers who shop at their stores nationwide. The coupons were delivered via retailer-specific apps and were valid only for the November 21st weekend. The marketing team has shared the results with us: they observed, on average, 23% higher soup category sales when the campaign was running compared to the previous weekend. The marketing team was quick to label the campaign as a success, but upper-level management is skeptical and has asked us to review and confirm the results.
 
-<center>
+Let's come up with a story...
 
-## What if we have multiple explanatory variables?
+## Motivating Example
 
-Including more than one explanatory variable is almost always a better approximation of the *data generating process*.
+Kroger decided to run a promotional campaign offering targeted %-discount coupons to customers who shop at their stores nationwide. The coupons were delivered via retailer-specific apps and were valid only for the November 21st weekend. The marketing team has shared the results with us: they observed, on average, 23% higher soup category sales when the campaign was running compared to the previous weekend. The marketing team was quick to label the campaign as a success, but upper-level management is skeptical and has asked us to review and confirm the results.
+
+What kind of data would we need to collect to truly determine if the campaign worked?
+
+## Statistical and Causal Inference
+
+Regression and how we interpret the parameter estimates *sounds* like causality, but regression doesn't *necessarily* describe causal relationships. There are two types of inference that are interconnected.
+
+- **Statistical inference** is inferring associations (e.g., correlations) between variables.
+- **Causal inference** is inferring *causal* associations between variables.
+
+Discovering associations between variables is *common*. Uncovering causality is *uncommon*. We don't automatically get causality by fitting and evaluating a statistical model. At a minimum, we need to come up with a story that realistically describes how our data was created.
+
+## Realistic Stories Often Require Multiple Variables
+
+Including more than one explanatory variable almost always gives us a more realistic representation of how our data was created (our story).
 
 $$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + ... + \beta_p x_p + \epsilon, \text{ where } \epsilon \sim Normal(0, 1)$$
 
@@ -70,9 +76,9 @@ $$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + ... + \beta_p x_p + \epsilon, \text{
 - $\beta_p$ is the $p$th *slope* parameter.
 - $\epsilon$ is the *error* term.
 
-## Simulating Data with Multiple Regression
+## For Example...
 
-Remember we can pretend that our model *is* the data generating process and simulate data.
+Remember we can pretend that our model *is* the true story and use it to simulate data.
 
 ```{r message=FALSE}
 # Load packages.
@@ -92,27 +98,14 @@ beta_coupon <- 5
 beta_ad <- 10
 ```
 
-## Review: Why do we simulate data?
-
-- Set up a Framework (Model Validation and Debugging)
-  - test whether your model behaves as expected
-  - catch errors and implementation mistakes
-  - set up a pipeline for your actual data
-- Using the Model as a sanity check
-  - you likely have some idea about what your data looks like - if you plug similar values into the model, do you get realistic outputs?
-- Stress Test (Understand Impacts of Model Assumptions)
-  - test how your model performs when assumptions are violated
-
 ---
-
-We're going to `stress test' our model by **investigating potential problems** with the data. (Really, we're investigating issues with including/excluding variables that we shouldn't).
 
 ```{r}
 sim_data <- tibble(
   # Simulate money spent on discounts.
   discount = runif(nobs, min = 0, max = 75),
   # Simulate money spent on endcap displays conditioned on cold temp.
-  temp = rbinom(nobs, size = 1, prob = 0.3),
+  temp = rbinom(nobs, size = 1, prob = 0.4),
   endcaps = temp * 75 + runif(nobs, min = 0, max = 50),
   # Simulate three levels of features: none, coupon, and ads.
   feature = rbinom(nobs, size = 2, prob = 0.5),
@@ -125,28 +118,6 @@ sim_data <- tibble(
     beta_temp * temp + beta_coupon * feature_coupon + beta_ad * feature_ad + 
     rnorm(nobs, mean = 0, sd = 5)
 )
-```
-
-## DAG for the Simulated Data
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-# Create a DAG.
-library(dagitty)
-library(ggdag)
-
-dag <- dagitty("dag {
-  Temp -> End
-  Temp -> Sales
-  End -> Sales
-  
-  Disc -> Cat
-  Feat -> Cat
-  Cat -> Sales
-  Feat -> Sales
-}")
-
-ggdag(dag, layout = "circle") +
-  theme_dag()
 ```
 
 ---
@@ -219,11 +190,21 @@ fit_02 <- linear_reg() |>
   fit(sales ~ discount + endcaps + feature_coupon + feature_ad, data = sim_data)
 ```
 
----
+## Your Turn!
 
 Remember that `intercept = 25`, `discount = 2`, `endcaps = 7`, `temp = 15`, `feature_coupon = 5`, and `feature_ad = 10`.
 
-```{r}
+Determine whether our model recovered the correct parameter values. Why or why not?
+
+---
+
+```{r, echo = FALSE}
+tidy(fit_02, conf.int = TRUE)
+```
+
+---
+
+```{r, eval = FALSE}
 tidy(fit_02, conf.int = TRUE)
 ```
 
@@ -237,35 +218,15 @@ tidy(fit_02, conf.int = TRUE) |>
   geom_hline(yintercept = 0, color = "red")
 ```
 
----
+## What's Going On?
 
-The association between `temp`, `endcaps`, and `sales` is a **fork**. If we want to estimate the causal effect of `endcaps` on `sales`, we need to control for the effect of `temp`.
+Why was our estimate for the effect of `endcaps` on `sales` larger than it should have been?
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-# Create a DAG.
-library(dagitty)
-library(ggdag)
+## What if We Include Variables We Shouldn't?
 
-dag <- dagitty("dag {
-  Temp -> End
-  Temp -> Sales
-  End -> Sales
-  
-  Disc -> Cat
-  Feat -> Cat
-  Cat -> Sales
-  Feat -> Sales
-}")
+Problems from omitted variable bias might suggest we should throw everything we can in the model. However, when adding explanatory variables, we need to be careful not to include *redundant* explanatory variables.
 
-ggdag(dag, layout = "circle") +
-  theme_dag()
-```
-
-## Included Variable Bias
-
-This might suggest we should throw everything we can in the model. However, when adding explanatory variables, we need to be careful not to include explanatory variables that create **included variable bias**.
-
-Why would including an explanatory variable create bias?
+Why would including redundant variables create problems?
 
 ```{r}
 # Fit a model with included variable bias.
@@ -295,43 +256,23 @@ tidy(fit_03, conf.int = TRUE) |>
   geom_hline(yintercept = 0, color = "red")
 ```
 
----
-
-There is no association between `discount` and `features`, but they meet at `category` in a **collider**. Including `category` *creates* an association between `discount` and `features`. Additionally, the association between `discount` and `sales` goes through `category` in a **pipe**. If we include `category`, the effect of `discount` is accounted for entirely by `category`.
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-# Create a DAG.
-library(dagitty)
-library(ggdag)
-
-dag <- dagitty("dag {
-  Temp -> End
-  Temp -> Sales
-  End -> Sales
-  
-  Disc -> Cat
-  Feat -> Cat
-  Cat -> Sales
-  Feat -> Sales
-}")
-
-ggdag(dag, layout = "circle") +
-  theme_dag()
-```
-
 ## Multicollinearity
 
 More formally, when adding explanatory variables, we need to avoid including variables that are highly correlated, something called **multicollinearity**.
 
+The intuition is that our model can't determine how to accurately determine how different explanatory variables contribute to the story if they *make very similar contributions*.
+
+## Uncovering Multicollinearity
+
+Let's examine a correlation matrix of our data.
+
 ## Considerations
 
-Be thoughtful when adding explanatory variables. Once again, consider the data generating process and use a DAG.
+Be thoughtful when adding explanatory variables. ALWAYS come up with a plausible story before training your model.
 
 - Think carefully about the variables in your data! People often encounter problems when one variable is a *function* of another.
 - Use `cor()` on continuous explanatory variables to check for multicollinearity.
-- Statistical significance and model comparisons can be informative, but they don't guarantee correct modeling decisions.
-
-Be transparent about the decisions you make about adding and excluding explanatory variables.
+- Statistical significance and model comparisons can be informative, but **they don't guarantee correct modeling decisions.**
 
 ---
 
@@ -339,7 +280,7 @@ Be transparent about the decisions you make about adding and excluding explanato
 bind_rows(
   glance(fit_01), # The complete model.
   glance(fit_02), # Model with omitted variable bias.
-  glance(fit_03)  # Model with included variable bias.
+  glance(fit_03)  # Model with collinearity
 )
 ```
 
@@ -347,11 +288,17 @@ bind_rows(
 bind_rows(
   glance(fit_01), # The complete model.
   glance(fit_02), # Model with omitted variable bias.
-  glance(fit_03)  # Model with included variable bias.
+  glance(fit_03)  # Model with collinearity
 ) |> 
   select(r.squared:logLik) |> 
   as.data.frame()
 ```
+
+## What Should I Do?
+
+- Have integrity in your analyses
+- Be transparent about the decisions you make about adding and excluding explanatory variables.
+- Be honest about uncertainty. Are there any variables that are not included in your model that could bias your results?
 
 ## Wrapping Up
 
@@ -365,9 +312,9 @@ bind_rows(
 
 - Overfitting and prediction.
 
-## Exercise 11
+## Exercise 9
 
-Multiple regression is often referred to as "key drivers analysis" in business applications. In the Nielsen `soup_data`, available on Canvas, the outcome of interest is `Sales`.
+Multiple regression is often referred to as "key drivers analysis" in business applications. Kroger has requested a key drivers analysis for the `WEST CENSUS TA` for sales of `CAMPBELL's` products. In the Nielsen `soup_data`, available on Canvas, the outcome of interest is `Sales`.
 
 1. Using `soup_data`, build and compare four *multiple* regressions for `CAMPBELL’S Sales` for the `WEST CENSUS TA` using different combinations (your choice) of the following promotional explanatory variables: `Any_Disp_Spend` (spend on in-store displays), `Any_Feat_Spend` (spend on coupons and other printed promotions, collectively called "features"), and `Any_Price_Decr_Spend` (spend on price decreases).
 2. Use the best-fitting model to predict counterfactual `Sales` for Campbell’s. Assume that Campbell's can spend up to $10,000 for this trading area. Produce predictions for four counterfactual scenarios and use them to detail a proposal for Campbell's for the `WEST CENSUS TA`.
