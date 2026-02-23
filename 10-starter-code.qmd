@@ -13,16 +13,21 @@ editor: visual
 
 ## Example: Simulate data with multiple explanatory variables
 
-Remember we can pretend that our model *is* the true story and use it to simulate data.
+Imagine we are simulating *product-level* data for a given week, including the total sales for the product and various marketing and product-specific variables.
 
-```{r message=FALSE}
+```{r}
 # Set variable and parameter values.
 nobs <- 500
 intercept <- 25
+# coefficient for money spent on discounts.
 beta_discount <- 2
+# coefficient for money spent on endcap displays
 beta_endcaps <- 7
+# coefficient for cold temperature product
 beta_temp <- 15
+# coefficient for effect of sending coupons
 beta_coupon <- 5
+# coefficient for effect of running an ad
 beta_ad <- 10
 ```
 
@@ -41,7 +46,7 @@ sim_data <- tibble(
   feature_coupon = if_else(feature == 1, 1, 0),
   feature_ad = if_else(feature == 2, 1, 0),
   # Simulate category promotion as a function of discounts and features.
-  category = 70 * discount + 30 * feature + rnorm(nobs, mean = 50, sd = 5),
+  category = discount + 30 * feature + rnorm(nobs, mean = 50, sd = 5),
   # Simulate sales as a function of all four variables.
   sales = intercept + beta_discount * discount + beta_endcaps * endcaps + 
     beta_temp * temp + beta_coupon * feature_coupon + beta_ad * feature_ad + 
@@ -150,8 +155,6 @@ cor(sim_data)
 ```
 
 Remember... strong correlations between our outcome variable and our explanatory variables are good...but very strong correlations between our explanatory variables are bad for inference and can prevent us from identifying correct parameter estimates.
-
-## One Last Thing...
 
 Statistical significance and model comparisons are no substitute for careful consideration of the story behind the data.
 

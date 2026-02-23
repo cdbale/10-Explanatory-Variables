@@ -60,7 +60,7 @@ Regression and how we interpret the parameter estimates *sounds* like causality,
 - **Statistical inference** is inferring associations (e.g., correlations) between variables.
 - **Causal inference** is inferring *causal* associations between variables.
 
-Discovering associations between variables is *common*. Uncovering causality is *uncommon*. We don't automatically get causality by fitting and evaluating a statistical model. At a minimum, we need to come up with a story that realistically describes how our data was created.
+Discovering associations between variables is *common*. Uncovering causality is *uncommon*. We don't automatically get causality by fitting and evaluating a statistical model. We can come **close** to causality by coming up with a more realistic story...
 
 ## Realistic Stories Often Require Multiple Variables
 
@@ -78,29 +78,38 @@ $$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + ... + \beta_p x_p + \epsilon, \text{
 
 ## For Example...
 
-Remember we can pretend that our model *is* the true story and use it to simulate data.
+Remember we can pretend that our model *is* the true story and use it to simulate data. 
+
+Imagine we are simulating *product-level* data for a given week, including the total sales for the product and various marketing and product-specific variables.
+
+---
 
 ```{r message=FALSE}
 # Load packages.
 library(tidyverse)
 library(tidymodels)
 
-# Set the randomization seed.
-set.seed(123)
-
 # Set variable and parameter values.
 nobs <- 500
 intercept <- 25
+# coefficient for money spent on discounts.
 beta_discount <- 2
+# coefficient for money spent on endcap displays
 beta_endcaps <- 7
+# coefficient for cold temperature product
 beta_temp <- 15
+# coefficient for effect of sending coupons
 beta_coupon <- 5
+# coefficient for effect of running an ad
 beta_ad <- 10
 ```
 
 ---
 
 ```{r}
+# Set the randomization seed.
+set.seed(123)
+
 sim_data <- tibble(
   # Simulate money spent on discounts.
   discount = runif(nobs, min = 0, max = 75),
@@ -112,7 +121,7 @@ sim_data <- tibble(
   feature_coupon = if_else(feature == 1, 1, 0),
   feature_ad = if_else(feature == 2, 1, 0),
   # Simulate category promotion as a function of discounts and features.
-  category = 70 * discount + 30 * feature + rnorm(nobs, mean = 50, sd = 5),
+  category = discount + 30 * feature + rnorm(nobs, mean = 50, sd = 5),
   # Simulate sales as a function of all four variables.
   sales = intercept + beta_discount * discount + beta_endcaps * endcaps + 
     beta_temp * temp + beta_coupon * feature_coupon + beta_ad * feature_ad + 
@@ -260,7 +269,7 @@ tidy(fit_03, conf.int = TRUE) |>
 
 More formally, when adding explanatory variables, we need to avoid including variables that are highly correlated, something called **multicollinearity**.
 
-The intuition is that our model can't determine how to accurately determine how different explanatory variables contribute to the story if they *make very similar contributions*.
+The intuition is that our model can't accurately determine how different explanatory variables contribute to the story if they *make very similar contributions*.
 
 ## Uncovering Multicollinearity
 
@@ -294,11 +303,35 @@ bind_rows(
   as.data.frame()
 ```
 
+## Don't be a Cuttlefish!
+
+<center>
+![](Figures/cuttlefish.jpg){width="900px"}
+</center>
+
+## Have Integrity
+
+"People can behave like cuttlefish, changing their clothing, language, behavior, and thoughts, depending on their surroundings. They might do this in order to impress or be accepted by others. However, this behavior does people more harm than good. In their eagerness to blend in, they can sacrifice their integrity."
+
+[Barbara A. Lewis](https://www.churchofjesuschrist.org/study/ensign/2018/04/integrity?lang=eng)
+
+## Wells Fargo Cross-Selling Fraud
+
+- Internal Pressure: We *have* to meet sales goals!
+- Decision: employees opened millions of unauthorized accounts.
+- Result: [Wells Fargo agrees to pay $3 billion in settlement](https://www.justice.gov/archives/opa/pr/wells-fargo-agrees-pay-3-billion-resolve-criminal-and-civil-investigations-sales-practices)
+
+## Purdue Pharma Opioid Scandal
+
+- Internal Pressure: make money, sell prescription drugs.
+- Decision: Aggressive marketing of opioid drugs, including downplaying the addictive risks and encouraging over-prescription.
+- Result: [Criminal guilty pleas, $8 billion settlement, dissolution of the company and repurposed for public benefit.](https://www.justice.gov/archives/opa/pr/justice-department-announces-global-resolution-criminal-and-civil-investigations-opioid).
+
 ## What Should I Do?
 
-- Have integrity in your analyses
-- Be transparent about the decisions you make about adding and excluding explanatory variables.
+- Be transparent about the decisions you make and your motivations for those decisions. Don't hunt for statistical significance!
 - Be honest about uncertainty. Are there any variables that are not included in your model that could bias your results?
+- Conduct analyses *in the pursuit of truth*, NOT in the pursuit of a specific result.
 
 ## Wrapping Up
 
@@ -314,9 +347,16 @@ bind_rows(
 
 ## Exercise 9
 
-Multiple regression is often referred to as "key drivers analysis" in business applications. Kroger has requested a key drivers analysis for the `WEST CENSUS TA` for sales of `CAMPBELL's` products. In the Nielsen `soup_data`, available on Canvas, the outcome of interest is `Sales`.
+Multiple regression is often referred to as "key drivers analysis" in business applications. Kroger has requested a key drivers analysis for `Sales` of `CAMPBELL'S` brand products in the `WEST CENSUS TA` Retailer Trade Area.
 
-1. Using `soup_data`, build and compare four *multiple* regressions for `CAMPBELL’S Sales` for the `WEST CENSUS TA` using different combinations (your choice) of the following promotional explanatory variables: `Any_Disp_Spend` (spend on in-store displays), `Any_Feat_Spend` (spend on coupons and other printed promotions, collectively called "features"), and `Any_Price_Decr_Spend` (spend on price decreases).
-2. Use the best-fitting model to predict counterfactual `Sales` for Campbell’s. Assume that Campbell's can spend up to $10,000 for this trading area. Produce predictions for four counterfactual scenarios and use them to detail a proposal for Campbell's for the `WEST CENSUS TA`.
-3. Render the Quarto document into Word and upload to Canvas.
+- Build at least two different regression models for `Sales` using any combination of the variables `Any_Disp_Spend` (spend on in-store displays), `Any_Feat_Spend` (spend on coupons and other printed promotions, collectively called "features"), and `Any_Price_Decr_Spend` (spend on price decreases).
+- Compare each of the models' R-squared. Which one explains the most variation in `Sales`?
+
+Continued on next slide...
+
+---
+
+- What are some omitted variables that could affect the estimates of the coefficients in your model? No need to build an exhaustive list, just come up with one plausible example.
+- Using the best fitting model from part 2, predict counterfactual `Sales` for Campbell’s. Assume that Kroger can spend up to $10,000 for this trading area. Produce predictions for three counterfactual scenarios and use them to detail a proposal for how Kroger should promote Campbell's products for the `WEST CENSUS TA`.
+- Render the Quarto document into Word and upload to Canvas.
 
